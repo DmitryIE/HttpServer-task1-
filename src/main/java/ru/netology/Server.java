@@ -7,25 +7,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    final int COUNT = 64;
 
-    ExecutorService executorService = Executors.newFixedThreadPool(COUNT);
+    private static final int SERVER_PORT = 25757;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(64);
 
-    public void listen(int port) {
-
-        try (final var serverSocket = new ServerSocket(port)) {
-
+    public void start() {
+        try (var serverSocket = new ServerSocket(SERVER_PORT)) {
             while (true) {
-                final var socket = serverSocket.accept();
-                System.out.println(socket);
-                Handler handler = new Handler(socket);
-                executorService.submit(handler);
+                var socket = serverSocket.accept();
+                var thread = new Handler(socket);
+                threadPool.submit(thread);
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.getMessage();
         }
-
     }
 
 }

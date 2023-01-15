@@ -11,34 +11,28 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class Handler implements Runnable {
-    private final Socket socket;
-    private final BufferedReader in;
-    private final BufferedOutputStream out;
-
-    final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
+    private Socket socket;
+    private final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
-    public Handler(Socket socket) throws IOException {
+
+    public Handler(Socket socket) {
         this.socket = socket;
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new BufferedOutputStream(socket.getOutputStream());
     }
 
     @Override
     public void run() {
-
-        try {
-
+        try (var in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+             var out = new BufferedOutputStream(this.socket.getOutputStream())) {
             while (true) {
-                // read only request line for simplicity
-                // must be in form GET /path HTTP/1.1
                 final var requestLine = in.readLine();
                 final var parts = requestLine.split(" ");
 
                 if (parts.length != 3) {
-                    // just close socket
+                    socket.close();
                     continue;
                 }
+
 
                 final var path = parts[1];
                 if (!validPaths.contains(path)) {
@@ -84,13 +78,11 @@ public class Handler implements Runnable {
                 ).getBytes());
                 Files.copy(filePath, out);
                 out.flush();
-
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
         }
     }
-
-
 }
